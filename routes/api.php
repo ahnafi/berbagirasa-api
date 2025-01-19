@@ -9,3 +9,6 @@ Route::get('/user', function (Request $request) {
 
 Route::apiResource('/users', App\Http\Controllers\Api\UserController::class);
 Route::apiResource('/categories', App\Http\Controllers\Api\CategoryController::class);
+Route::apiResource('/posts', App\Http\Controllers\Api\PostController::class);
+Route::apiResource('/post-images', App\Http\Controllers\Api\PostImageController::class);
+Route::apiResource('/feedback', App\Http\Controllers\Api\FeedbackController::class);

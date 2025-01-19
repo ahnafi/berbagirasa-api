@@ -17,7 +17,7 @@ class CategoryController extends Controller
      */
     public function index() {
         $categories = Category::all();
-        return new CategoryResource('success', 'Data retrieved successfully', $categories);
+        return new CategoryResource('success', 'Data fetched successfully', $categories);
     }
 
     /**
@@ -37,5 +37,65 @@ class CategoryController extends Controller
 
         $category = Category::create($request->all());
         return new CategoryResource('success', 'Data created successfully', $category);
+    }
+
+    /**
+     * show
+     *
+     * @param  mixed $id
+     * @return void
+     */
+    public function show($id) {
+        $category = Category::find($id);
+
+        if(!$category) {
+            return new CategoryResource('error', 'Data not found', null);
+        }
+
+        return new CategoryResource('success', 'Category fetched successfully', $category);
+    }
+
+    /**
+     * update
+     *
+     * @param  mixed $request
+     * @param  mixed $id
+     * @return void
+     */
+    public function update(Request $request, $id)
+    {
+        $category = Category::find($id);
+
+        if (!$category) {
+            return new CategoryResource('error', 'Data not found', null);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return new CategoryResource('error', $validator->errors(), null);
+        }
+
+        $category->update($request->all());
+        return new CategoryResource('success', 'Data updated successfully', $category);
+    }
+
+    /**
+     * destroy
+     *
+     * @param  mixed $id
+     * @return void
+     */
+    public function destroy($id) {
+        $category = Category::find($id);
+
+        if (!$category) {
+            return new CategoryResource('error', 'Data not found', null);
+        }
+
+        $category->delete();
+        return new CategoryResource('success', 'Data deleted successfully', null);
     }
 }
