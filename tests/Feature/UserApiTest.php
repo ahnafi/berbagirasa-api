@@ -2,12 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class UserApiTest extends TestCase
 {
+    use RefreshDatabase;
+
     /**
      * Test fetching users
      *
@@ -15,12 +19,14 @@ class UserApiTest extends TestCase
      */
     public function test_fetch_users(): void
     {
+        User::factory()->count(5)->create();
+
         $this->get('/api/users')
             ->assertStatus(200)
             ->assertJson([
-            'status' => 'success',
-            'message' => 'Data fetched successfully',
-        ]);
+                'status' => 'success',
+                'message' => 'Data fetched successfully',
+            ]);
     }
 
     /**
@@ -39,6 +45,7 @@ class UserApiTest extends TestCase
             'name' => 'John Doe',
             'email' => 'johndoe@gmail.com',
             'phone' => '08123456789',
+            'password' => "johndoegantenk"
         ];
 
         $this->post('/api/users', $data)
@@ -46,10 +53,14 @@ class UserApiTest extends TestCase
             ->assertJson([
                 'status' => 'success',
                 'message' => 'User created successfully',
-                'data' => $data,
+                'data' => [
+                    'name' => 'John Doe',
+                    'email' => 'johndoe@gmail.com',
+                    'phone' => '08123456789',
+                ] ,
             ])
             ->assertJsonStructure([
-                'status',
+                'status' ,
                 'message',
                 'data' => [
                     'id',
@@ -69,7 +80,9 @@ class UserApiTest extends TestCase
      */
     public function test_fetch_user_by_id(): void
     {
-        $this->get('/api/users/1')
+        $user = User::factory()->create();
+
+        $this->get("/api/users/{$user->id}")
             ->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
@@ -116,7 +129,9 @@ class UserApiTest extends TestCase
      */
     public function test_delete_user(): void
     {
-        $this->delete('/api/users/1')
+        $user = User::factory()->create();
+
+        $this->delete("/api/users/{$user->id}")
             ->assertStatus(200)
             ->assertJson([
                 'status' => 'success',

@@ -7,6 +7,7 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class UserController extends Controller
 {
@@ -25,9 +26,10 @@ class UserController extends Controller
      * create
      *
      * @param  mixed $request
-     * @return UserResource
+     * @return JsonResponse
      */
-    public function store(Request $request) : UserResource {
+    public function store(Request $request): JsonResponse
+    {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|min:3|max:255',
             'email' => 'required|email|unique:users,email',
@@ -36,7 +38,9 @@ class UserController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return new UserResource('error', $validator->errors(), null);
+            return (new UserResource('error', $validator->errors(), null))
+                ->response()
+                ->setStatusCode(400);
         }
 
         $request->merge([
@@ -44,7 +48,9 @@ class UserController extends Controller
         ]);
         $user = User::create($request->all());
 
-        return new UserResource('success', 'User created successfully', $user);
+        return (new UserResource('success', 'User created successfully', $user))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
