@@ -13,15 +13,21 @@ class UserController extends Controller
     /**
      * index
      *
-     * @return void
+     * @return UserResource
      */
-    public function index() {
+    public function index() : UserResource {
        $users = User::all();
 
        return new UserResource('success', 'Data fetched successfully', $users);
     }
 
-    public function store(Request $request) {
+    /**
+     * create
+     *
+     * @param  mixed $request
+     * @return UserResource
+     */
+    public function store(Request $request) : UserResource {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|min:3|max:255',
             'email' => 'required|email|unique:users,email',
@@ -45,9 +51,9 @@ class UserController extends Controller
      * show
      *
      * @param  mixed $id
-     * @return void
+     * @return UserResource
      */
-    public function show($id) {
+    public function show($id) : UserResource {
         $user = User::find($id);
 
         if (!$user) {
@@ -62,9 +68,9 @@ class UserController extends Controller
      *
      * @param  mixed $request
      * @param  mixed $id
-     * @return void
+     * @return UserResource
      */
-    public function update(Request $request, $id)
+    /* public function update(Request $request, $id) : UserResource
     {
         $user = User::find($id);
 
@@ -89,15 +95,15 @@ class UserController extends Controller
         $user->update($request->all());
 
         return new UserResource('success', 'User updated successfully', $user);
-    }
+    } */
 
     /**
      * destroy
      *
      * @param  mixed $id
-     * @return void
+     * @return UserResource
      */
-    public function destroy($id)
+    public function destroy($id) : UserResource
     {
         $user = User::find($id);
 
@@ -106,7 +112,6 @@ class UserController extends Controller
         }
 
         $user->delete();
-
         return new UserResource('success', 'User deleted successfully', null);
     }
 }

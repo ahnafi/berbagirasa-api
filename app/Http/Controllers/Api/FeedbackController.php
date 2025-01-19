@@ -13,9 +13,9 @@ class FeedbackController extends Controller
     /**
      * index
      *
-     * @return void
+     * @return FeedbackResource
      */
-    public function index() {
+    public function index() : FeedbackResource {
         $feedback = Feedback::all();
 
         return new FeedbackResource('success', 'Data fetched successfully', $feedback);
@@ -25,9 +25,9 @@ class FeedbackController extends Controller
      * store
      *
      * @param  mixed $request
-     * @return void
+     * @return FeedbackResource
      */
-    public function store(Request $request) {
+    public function store(Request $request) : FeedbackResource {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|min:3|max:255',
             'email' => 'required|email',
@@ -47,9 +47,9 @@ class FeedbackController extends Controller
      * show
      *
      * @param  mixed $id
-     * @return void
+     * @return FeedbackResource
      */
-    public function show($id)
+    public function show($id) : FeedbackResource
     {
         $feedback = Feedback::find($id);
 
@@ -65,9 +65,9 @@ class FeedbackController extends Controller
      *
      * @param  mixed $request
      * @param  mixed $id
-     * @return void
+     * @return FeedbackResource
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id) : FeedbackResource
     {
         $feedback = Feedback::find($id);
 
@@ -94,9 +94,9 @@ class FeedbackController extends Controller
      * delete
      *
      * @param  mixed $id
-     * @return void
+     * @return FeedbackResource
      */
-    public function destroy($id)
+    public function destroy($id) : FeedbackResource
     {
         $feedback = Feedback::find($id);
 

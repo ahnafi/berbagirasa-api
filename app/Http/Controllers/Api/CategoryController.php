@@ -13,9 +13,9 @@ class CategoryController extends Controller
     /**
      * index
      *
-     * @return void
+     * @return CategoryResource
      */
-    public function index() {
+    public function index() : CategoryResource {
         $categories = Category::all();
         return new CategoryResource('success', 'Data fetched successfully', $categories);
     }
@@ -24,9 +24,9 @@ class CategoryController extends Controller
      * store
      *
      * @param  mixed $request
-     * @return void
+     * @return CategoryResource
      */
-    public function store(Request $request) {
+    public function store(Request $request) : CategoryResource {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
         ]);
@@ -43,9 +43,9 @@ class CategoryController extends Controller
      * show
      *
      * @param  mixed $id
-     * @return void
+     * @return CategoryResource
      */
-    public function show($id) {
+    public function show($id) : CategoryResource {
         $category = Category::find($id);
 
         if(!$category) {
@@ -60,9 +60,9 @@ class CategoryController extends Controller
      *
      * @param  mixed $request
      * @param  mixed $id
-     * @return void
+     * @return CategoryResource
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id) : CategoryResource
     {
         $category = Category::find($id);
 
@@ -86,9 +86,9 @@ class CategoryController extends Controller
      * destroy
      *
      * @param  mixed $id
-     * @return void
+     * @return CategoryResource
      */
-    public function destroy($id) {
+    public function destroy($id) : CategoryResource{
         $category = Category::find($id);
 
         if (!$category) {
