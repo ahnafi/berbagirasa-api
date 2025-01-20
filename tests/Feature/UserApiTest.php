@@ -40,6 +40,7 @@ class UserApiTest extends TestCase
         // 'name' => 'required|string|min:3|max:255',
         // 'email' => 'required|email|unique:users,email',
         // 'phone' => 'required|string|unique:users,phone|min:10|max:15',
+        // 'password' => 'required|string|min:8',
 
         $data = [
             'name' => 'John Doe',
