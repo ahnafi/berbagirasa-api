@@ -13,10 +13,11 @@ class PostController extends Controller
     /**
      * index
      *
-     * @return void
+     * @return PostResource
      */
-    public function index() {
-        $posts = Post::all();
+    public function index() : PostResource
+    {
+        $posts = Post::with('images')->get();
 
         return new PostResource('success', 'Data fetched successfully', $posts);
     }
@@ -25,14 +26,15 @@ class PostController extends Controller
      * store
      *
      * @param  mixed $request
-     * @return void
+     * @return PostResource
      */
-    public function store(Request $request) {
+    public function store(Request $request) : PostResource
+    {
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|min:3|max:255',
             'description' => 'required|string',
             'location' => 'required|string|max:255',
-            'category_id' => 'required|integer',
+            'category_id' => 'required|integer|exists:categories,id',
         ]);
 
         if ($validator->fails()) {
@@ -54,11 +56,11 @@ class PostController extends Controller
      * show
      *
      * @param  mixed $id
-     * @return void
+     * @return PostResource
      */
-    public function show($id)
+    public function show($id) : PostResource
     {
-        $post = Post::find($id);
+        $post = Post::with('images')->find($id);
 
         if (!$post) {
             return new PostResource('error', 'Post not found', null);
