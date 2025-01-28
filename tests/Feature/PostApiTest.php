@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\Post;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -22,7 +24,7 @@ class PostApiTest extends TestCase
             'title' => 'Post Title',
             'description' => 'Post Description',
             'location' => 'Post Location',
-            'category_id' => 1,
+            'category_id' => Category::factory()->create()->id,
         ]);
 
         $response->assertStatus(200)
@@ -63,7 +65,7 @@ class PostApiTest extends TestCase
             ->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
-                'message' => 'Data fetched successfully',
+                'message' => 'Post fetched successfully',
                 'data' => $post->toArray(),
             ]);
     }

@@ -68,4 +68,59 @@ class PostController extends Controller
 
         return new PostResource('success', 'Post fetched successfully', $post);
     }
+
+    /**
+     * update
+     *
+     * @param  mixed $request
+     * @param  mixed $id
+     * @return PostResource
+     */
+    public function update(Request $request, $id) : PostResource
+    {
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|min:3|max:255',
+            'description' => 'required|string',
+            'location' => 'required|string|max:255',
+            'category_id' => 'required|integer|exists:categories,id',
+        ]);
+
+        if ($validator->fails()) {
+            return new PostResource('error', $validator->errors(), null);
+        }
+
+        $post = Post::find($id);
+
+        if (!$post) {
+            return new PostResource('error', 'Post not found', null);
+        }
+
+        $post->update([
+            'title' => $request->title,
+            'description' => $request->description,
+            'location' => $request->location,
+            'category_id' => $request->category_id,
+        ]);
+
+        return new PostResource('success', 'Post updated successfully', $post);
+    }
+
+    /**
+     * destroy
+     *
+     * @param  mixed $id
+     * @return PostResource
+     */
+    public function destroy($id) : PostResource
+    {
+        $post = Post::find($id);
+
+        if (!$post) {
+            return new PostResource('error', 'Post not found', null);
+        }
+
+        $post->delete();
+
+        return new PostResource('success', 'Post deleted successfully', null);
+    }
 }
