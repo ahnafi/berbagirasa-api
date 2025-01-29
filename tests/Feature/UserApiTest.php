@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +12,43 @@ use Tests\TestCase;
 class UserApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    function test_get_user_current()
+    {
+        $this->seed(UserSeeder::class);
+
+        $user = User::factory()->create();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        $this->get("/api/users/current", [
+            "Authorization" => "Bearer $token"
+        ])->assertStatus(200)
+            ->assertJson([
+                "data" => [
+                    "id" => $user->id,
+                    "name" => $user->name,
+                    "email" => $user->email,
+                    "phone" => $user->phone,
+                    "photo" => $user->photo,
+                    "address" => $user->address,
+                    "bio" => $user->bio,
+                ]
+            ]);
+    }
+
+    function test_get_user_current_failed_unauthorized()
+    {
+
+        $this->get("/api/users/current")
+            ->assertStatus(401)
+            ->assertJson([
+                "errors" => [
+                    "message" => [
+                        "Unauthorized"
+                    ]
+                ]
+            ]);
+    }
 
     /**
      * Test fetching users
@@ -58,10 +96,10 @@ class UserApiTest extends TestCase
                     'name' => 'John Doe',
                     'email' => 'johndoe@gmail.com',
                     'phone' => '08123456789',
-                ] ,
+                ],
             ])
             ->assertJsonStructure([
-                'status' ,
+                'status',
                 'message',
                 'data' => [
                     'id',

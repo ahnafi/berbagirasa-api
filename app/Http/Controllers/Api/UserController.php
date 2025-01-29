@@ -6,26 +6,38 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class UserController extends Controller
 {
+
+    public function current(Request $request): UserResource
+    {
+        $user = Auth::user();
+
+        return new UserResource($user);
+    }
+
+
     /**
      * index
      *
      * @return UserResource
      */
-    public function index() : UserResource {
-       $users = User::all();
+    public function index(): UserResource
+    {
+        $users = User::all();
 
-       return new UserResource('success', 'Data fetched successfully', $users);
+        return new UserResource('success', 'Data fetched successfully', $users);
     }
 
     /**
      * create
      *
-     * @param  mixed $request
+     * @param mixed $request
      * @return JsonResponse
      */
     public function store(Request $request): JsonResponse
@@ -56,10 +68,11 @@ class UserController extends Controller
     /**
      * show
      *
-     * @param  mixed $id
+     * @param mixed $id
      * @return UserResource
      */
-    public function show($id) : UserResource {
+    public function show($id): UserResource
+    {
         $user = User::find($id);
 
         if (!$user) {
@@ -72,8 +85,8 @@ class UserController extends Controller
     /**
      * update
      *
-     * @param  mixed $request
-     * @param  mixed $id
+     * @param mixed $request
+     * @param mixed $id
      * @return UserResource
      */
     /* public function update(Request $request, $id) : UserResource
@@ -106,10 +119,10 @@ class UserController extends Controller
     /**
      * destroy
      *
-     * @param  mixed $id
+     * @param mixed $id
      * @return UserResource
      */
-    public function destroy($id) : UserResource
+    public function destroy($id): UserResource
     {
         $user = User::find($id);
 
