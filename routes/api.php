@@ -8,6 +8,7 @@ Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login'])
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/current', [App\Http\Controllers\Api\UserController::class, 'current']);
+    Route::patch('/users/current', [App\Http\Controllers\Api\UserController::class, 'update']);
     Route::post('/logout', [App\Http\Controllers\Api\AuthController::class, 'logout']);
 });
 

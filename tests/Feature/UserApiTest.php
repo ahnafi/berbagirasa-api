@@ -6,12 +6,18 @@ use App\Models\User;
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class UserApiTest extends TestCase
 {
-    use RefreshDatabase;
+    public function setUp(): void
+    {
+        parent::setUp();
+        User::query()->delete();
+    }
 
     function test_get_user_current()
     {
@@ -50,131 +56,178 @@ class UserApiTest extends TestCase
             ]);
     }
 
-    /**
-     * Test fetching users
-     *
-     * @return void
-     */
-    public function test_fetch_users(): void
+    function test_update_user_success()
     {
-        User::factory()->count(5)->create();
+        $this->seed(UserSeeder::class);
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
 
-        $this->get('/api/users')
-            ->assertStatus(200)
-            ->assertJson([
-                'status' => 'success',
-                'message' => 'Data fetched successfully',
-            ]);
-    }
+        Storage::fake("public");
+        $file = UploadedFile::fake()->image("asolole.jpg")->size(1024);
 
-    /**
-     * Test creating a user
-     *
-     * @return void
-     */
-    public function test_create_user(): void
-    {
-        // Structure of the data to be sent
-        // 'name' => 'required|string|min:3|max:255',
-        // 'email' => 'required|email|unique:users,email',
-        // 'phone' => 'required|string|unique:users,phone|min:10|max:15',
-        // 'password' => 'required|string|min:8',
-
-        $data = [
-            'name' => 'John Doe',
-            'email' => 'johndoe@gmail.com',
-            'phone' => '08123456789',
-            'password' => "johndoegantenk"
-        ];
-
-        $this->post('/api/users', $data)
-            ->assertStatus(201)
-            ->assertJson([
-                'status' => 'success',
-                'message' => 'User created successfully',
-                'data' => [
-                    'name' => 'John Doe',
-                    'email' => 'johndoe@gmail.com',
-                    'phone' => '08123456789',
-                ],
+        $this->patch("/api/users/current",
+            [
+                "name" => "budiono siregar",
+                "bio" => "intinya gitu",
+                "address" => "jalan ini itu adalah",
+                "photo" => $file,
+                "password" => "budiPasw@#123",
+                "phone" => "0823345346"
+            ],
+            [
+                "Authorization" => "Bearer $token"
             ])
-            ->assertJsonStructure([
-                'status',
-                'message',
-                'data' => [
-                    'id',
-                    'name',
-                    'email',
-                    'phone',
-                    'created_at',
-                    'updated_at',
-                ],
-            ]);
-    }
-
-    /**
-     * Test fetching user by id
-     *
-     * @return void
-     */
-    public function test_fetch_user_by_id(): void
-    {
-        $user = User::factory()->create();
-
-        $this->get("/api/users/{$user->id}")
             ->assertStatus(200)
             ->assertJson([
-                'status' => 'success',
-                'message' => 'User fetched successfully',
+                "data" => [
+                    "id" => $user->id,
+                    "name" => "budiono siregar",
+                    "bio" => "intinya gitu",
+                    "address" => "jalan ini itu adalah",
+                    "phone" => "0823345346"
+                ]
             ]);
     }
 
-    /**
-     * Test updating a user
-     *
-     * @return void
-     */
-    /* public function test_update_user(): void
+    function test_update_user_failed_unauthorized()
     {
-        // Structure of the data to be sent
-        // 'name' => 'required|string|min:3|max:255',
-        // 'email' => 'required|email|unique:users,email,' . $id,
-        // 'phone' => 'required|string|unique:users,phone,' . $id . '|min:10|max:15',
+        $this->seed(UserSeeder::class);
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
 
-        $data = [
-            'name' => 'John Doe',
-            'email' => 'johndoe@gmail.com',
-            'phone' => '08123456789',
-            'password' => 'password',
-            'address' => 'Lagos, Nigeria',
-            'bio' => 'A software developer',
-            'photo' => 'photo.jpg',
-        ];
+        Storage::fake("public");
+        $file = UploadedFile::fake()->image("asolole.jpg")->size(1024);
 
-        $this->put('/api/users/1', $data)
-            ->assertStatus(200)
+        $this->patch("/api/users/current",
+            [
+                "name" => "budiono siregar",
+                "bio" => "intinya gitu",
+                "address" => "jalan ini itu adalah",
+                "photo" => $file,
+                "password" => "budiPasw@#123",
+                "phone" => "0823345346"
+            ],
+        )
+            ->assertStatus(401)
             ->assertJson([
-                'status' => 'success',
-                'message' => 'User updated successfully',
-                'data' => $data,
+                "errors" => [
+                    "message" => [
+                        "Unauthorized"
+                    ]
+                ]
             ]);
     }
-    */
 
-    /**
-     * Test deleting a user
-     *
-     * @return void
-     */
-    public function test_delete_user(): void
+    function test_update_user_failed_no_field()
     {
-        $user = User::factory()->create();
+        $this->seed(UserSeeder::class);
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
 
-        $this->delete("/api/users/{$user->id}")
-            ->assertStatus(200)
+        Storage::fake("public");
+        $file = UploadedFile::fake()->image("asolole.jpg")->size(1024);
+
+        $this->patch("/api/users/current",
+            [
+                //
+            ],
+            [
+                "Authorization" => "Bearer $token"
+            ]
+        )
+            ->assertStatus(400)
             ->assertJson([
-                'status' => 'success',
-                'message' => 'User deleted successfully',
+                "errors" => [
+                    "message" => [
+                        "At least one field must be present."
+                    ]
+                ]
             ]);
     }
+
+    function test_update_user_failed_phone_is_already_taken()
+    {
+        $this->seed(UserSeeder::class);
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        $anotherUser = User::factory()->create();
+
+        Storage::fake("public");
+        $file = UploadedFile::fake()->image("asolole.jpg")->size(1024);
+
+        $this->patch("/api/users/current",
+            [
+                "phone" => $anotherUser->phone
+            ],
+            [
+                "Authorization" => "Bearer $token"
+            ]
+        )
+            ->assertStatus(400)
+            ->assertJson([
+                "errors" => [
+                    "phone" => [
+                        "The phone has already been taken."
+                    ]
+                ]
+            ]);
+    }
+
+    function test_update_user_failed_password_is_weak()
+    {
+        $this->seed(UserSeeder::class);
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        Storage::fake("public");
+        $file = UploadedFile::fake()->image("asolole.jpg")->size(1024);
+
+        $this->patch("/api/users/current",
+            [
+                "password" => "budionosiregar",
+            ],
+            [
+                "Authorization" => "Bearer $token"
+            ]
+        )
+            ->assertStatus(400)
+            ->assertJson([
+                "errors" => [
+                    "password" => [
+                        "The password field must contain at least one uppercase and one lowercase letter.",
+                        "The password field must contain at least one symbol.",
+                        "The password field must contain at least one number."
+                    ]
+                ]
+            ]);
+    }
+
+    function test_update_user_failed_image_size_max2mb()
+    {
+        $this->seed(UserSeeder::class);
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        Storage::fake("public");
+        $file = UploadedFile::fake()->image("asolole.jpg")->size(2049);
+
+        $this->patch("/api/users/current",
+            [
+                "photo" => $file,
+            ],
+            [
+                "Authorization" => "Bearer $token"
+            ]
+        )
+            ->assertStatus(400)
+            ->assertJson([
+                "errors" => [
+                    "photo" => [
+                        "The photo field must not be greater than 2000 kilobytes."
+                    ]
+                ]
+            ]);
+    }
+
 }
