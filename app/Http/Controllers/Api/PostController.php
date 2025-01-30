@@ -3,19 +3,33 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PostCreateRequest;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
+use App\Models\PostImage;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
-class PostController extends Controller
+class PostController extends Controller implements HasMiddleware
 {
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware("auth:sanctum", except: ["index", "show"])
+        ];
+    }
+
     /**
      * index
      *
      * @return PostResource
      */
-    public function index() : PostResource
+    public function index(): PostResource
     {
         $posts = Post::with('images')->get();
 
@@ -25,40 +39,33 @@ class PostController extends Controller
     /**
      * store
      *
-     * @param  mixed $request
-     * @return PostResource
+     * @param mixed $request
+     * @return JsonResponse
      */
-    public function store(Request $request) : PostResource
+    public function store(PostCreateRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|min:3|max:255',
-            'description' => 'required|string',
-            'location' => 'required|string|max:255',
-            'category_id' => 'required|integer|exists:categories,id',
-        ]);
+        $data = $request->validated();
+        $user = Auth::user();
 
-        if ($validator->fails()) {
-            return new PostResource('error', $validator->errors(), null);
+        $content = $user->posts()->create($data);
+
+        if ($request->hasfile("images")) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->storePublicly("contents", "public");
+                $content->images()->create(["path" => $path]);
+            }
         }
 
-        $post = Post::create([
-            'title' => $request->title,
-            'description' => $request->description,
-            'location' => $request->location,
-            'user_id' => auth()->id(),
-            'category_id' => $request->category_id,
-        ]);
-
-        return new PostResource('success', 'Post created successfully', $post);
+        return (new PostResource($content->load("images")))->response()->setStatusCode(201);
     }
 
     /**
      * show
      *
-     * @param  mixed $id
+     * @param mixed $id
      * @return PostResource
      */
-    public function show($id) : PostResource
+    public function show($id): PostResource
     {
         $post = Post::with('images')->find($id);
 
@@ -72,11 +79,11 @@ class PostController extends Controller
     /**
      * update
      *
-     * @param  mixed $request
-     * @param  mixed $id
+     * @param mixed $request
+     * @param mixed $id
      * @return PostResource
      */
-    public function update(Request $request, $id) : PostResource
+    public function update(Request $request, $id): PostResource
     {
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|min:3|max:255',
@@ -108,10 +115,10 @@ class PostController extends Controller
     /**
      * destroy
      *
-     * @param  mixed $id
+     * @param mixed $id
      * @return PostResource
      */
-    public function destroy($id) : PostResource
+    public function destroy($id): PostResource
     {
         $post = Post::find($id);
 
