@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Log;
@@ -10,7 +11,11 @@ use Tests\TestCase;
 
 class AuthApiTest extends TestCase
 {
-    use RefreshDatabase;
+    function setUp(): void
+    {
+        parent::setUp();
+        User::query()->delete();
+    }
 
     /**
      * Test user register
@@ -34,9 +39,12 @@ class AuthApiTest extends TestCase
             ->assertStatus(201)
             ->assertJson([
                 "data" => [
-                    'name' => 'John Doe',
-                    'email' => 'johndoe@gmail.com',
-                    'phone' => '08123456789'
+                    "user" => [
+                        'name' => 'John Doe',
+                        'email' => 'johndoe@gmail.com',
+                        'phone' => '08123456789'
+                    ],
+                    "token_type" => "Bearer"
                 ]
             ]);
     }
@@ -101,49 +109,75 @@ class AuthApiTest extends TestCase
         // 'email' => 'required|email|unique:users,email',
         // 'password' => 'required|string|min:8',
 
-        $password = 'password';
-        $user = User::factory()->create([
-            'email' => 'johndoe@gmail.com',
-            'password' => bcrypt($password),
-        ]);
+        $this->seed(UserSeeder::class);
 
-        $data = [
-            'email' => $user->email,
-            'password' => $password,
-        ];
-
-        $this->post('/api/login', $data)
+        $this->post('/api/login', [
+            "email" => "test@example.com",
+            "password" => "@Password1"
+        ])
             ->assertStatus(200)
             ->assertJson([
-                'status' => 'success',
-                'message' => 'User logged in successfully',
+                "data" => [
+                    "token_type" => "Bearer"
+                ]
             ])
             ->assertJsonStructure([
-                'status',
-                'message',
-                'data' => [
-                    'access_token',
-                    'token_type',
-                ],
+                "data" => [
+                    "access_token",
+                    "token_type"
+                ]
             ]);
     }
 
-    /**
-     * Test user profile
-     *
-     * @return void
-     */
-    public function test_user_can_fetch_profile(): void
+    public function test_user_cannot_login_email_or_password_wrong(): void
     {
-        $user = User::factory()->create();
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $this->seed(UserSeeder::class);
 
-        $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->get('/api/profile')
-            ->assertStatus(200)
+        $this->post('/api/login', [
+            "email" => "testa@example.com",
+            "password" => "@Password1a"
+        ])
+            ->assertStatus(401)
             ->assertJson([
-                'status' => 'success',
-                'message' => 'User profile retrieved successfully',
+                "errors" => [
+                    "message" => [
+                        "Email or Password is wrong"
+                    ]
+                ]
+            ])
+            ->assertJsonStructure([
+                "errors" => [
+                    "message" => [
+                    ]
+                ]
+            ]);
+    }
+
+    public function test_user_cannot_login_email_validation_error(): void
+    {
+        $this->seed(UserSeeder::class);
+
+        $this->post('/api/login', [
+            "email" => "testaaa",
+            "password" => "@Pass"
+        ])
+            ->assertStatus(400)
+            ->assertJson([
+                "errors" => [
+                    "email" => [
+                        "The email field must be a valid email address."
+                    ],
+                    "password" => [
+                        "The password field must be at least 8 characters.",
+                        "The password field must contain at least one number."
+                    ]
+                ]
+            ])
+            ->assertJsonStructure([
+                "errors" => [
+                    "email" => [
+                    ]
+                ]
             ]);
     }
 
@@ -161,8 +195,12 @@ class AuthApiTest extends TestCase
             ->post('/api/logout')
             ->assertStatus(200)
             ->assertJson([
-                'status' => 'success',
-                'message' => 'User logged out successfully',
+                "data" => [
+                    'message' => [
+                        'User logged out successfully',
+
+                    ]
+                ]
             ]);
     }
 }

@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UserLoginRequest;
 use App\Http\Requests\UserRegisterRequest;
 use App\Http\Resources\AuthResource;
 use App\Models\User;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -29,50 +32,42 @@ class AuthController extends Controller
         return ((new AuthResource($user, $token)))->response()->setStatusCode(201);
     }
 
-    public function login(Request $request): JsonResponse
+    public function login(UserLoginRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|string|email|max:255',
-            'password' => 'required|string|min:8',
-        ]);
+        $data = $request->validated();
 
-        if ($validator->fails()) {
-            return (new AuthResource('error', $validator->errors(), null))
-                ->response()
-                ->setStatusCode(400);
-        }
+        $user = User::where('email', $data["email"])->first();
 
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return (new AuthResource('error', 'The provided credentials are incorrect.', null))
-                ->response()
-                ->setStatusCode(401);
+        if (!$user || !Hash::check($data["password"], $user->password)) {
+            throw new HttpResponseException(response([
+                "errors" => [
+                    "message" => [
+                        "Email or Password is wrong"
+                    ]
+                ]
+            ], 401));
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return (new AuthResource('success', 'User logged in successfully', [
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ]))
-            ->response()
-            ->setStatusCode(200);
-    }
-
-    public function profile(Request $request): JsonResponse
-    {
-        return (new AuthResource('success', 'User profile retrieved successfully', $request->user()))
-            ->response()
-            ->setStatusCode(200);
+        return response()->json([
+            "data" => [
+                "access_token" => $token,
+                "token_type" => "Bearer"
+            ]
+        ]);
     }
 
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
 
-        return (new AuthResource('success', 'User logged out successfully', null))
-            ->response()
-            ->setStatusCode(200);
+        return response()->json([
+            "data" => [
+                "message" => [
+                    "User logged out successfully"
+                ]
+            ]
+        ]);
     }
 }
