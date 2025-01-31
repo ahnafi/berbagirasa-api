@@ -113,19 +113,27 @@ class PostController extends Controller implements HasMiddleware
     /**
      * destroy
      *
-     * @param mixed $id
-     * @return PostResource
+     * @param int $id
+     * @return JsonResponse
      */
-    public function destroy($id): PostResource
+    public function destroy(int $id): JsonResponse
     {
-        $post = Post::find($id);
+        $user = Auth::user();
 
-        if (!$post) {
-            return new PostResource('error', 'Post not found', null);
-        }
+        $post = $user->posts()->find($id);
+
+        if (!$post) throw new HttpResponseException(response([
+            "errors" => [
+                "message" => [
+                    "Post not found"
+                ]
+            ]
+        ], 404));
 
         $post->delete();
 
-        return new PostResource('success', 'Post deleted successfully', null);
+        return response()->json([
+            "data" => true
+        ]);
     }
 }

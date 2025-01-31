@@ -10,6 +10,7 @@ use Database\Seeders\CategorySeeder;
 use Database\Seeders\PostSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -308,6 +309,76 @@ class PostApiTest extends TestCase
                 "errors" => [
                     "message" => [
                         "Unauthorized"
+                    ]
+                ]
+            ]);
+    }
+
+    public function test_delete_post_success()
+    {
+        $this->seed(PostSeeder::class);
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        $post = $user->posts()->first();
+
+        $this->delete("/api/posts/" . $post->id, [], ["Authorization" => "Bearer $token"])
+            ->assertStatus(200)
+            ->assertJson([
+                "data" => true
+            ]);
+
+        $deleted = Post::onlyTrashed()->find($post->id);
+        Log::info(json_encode($deleted, JSON_PRETTY_PRINT));
+        self::assertNotNull($deleted);
+    }
+
+    public function test_delete_post_unauthorized()
+    {
+        $this->seed(PostSeeder::class);
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        $post = $user->posts()->first();
+
+        $this->delete("/api/posts/" . $post->id, [], [])
+            ->assertStatus(401)
+            ->assertJson([
+                "errors" => [
+                    "message" => [
+                        "Unauthorized"
+                    ]
+                ]
+            ]);
+    }
+
+    public function test_delete_post_not_found()
+    {
+        $this->seed(PostSeeder::class);
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        $post = $user->posts()->first();
+
+        $this->delete("/api/posts/" . $post->id + 100, [], ["Authorization" => "Bearer $token"])
+            ->assertStatus(404)
+            ->assertJson([
+                "errors" => [
+                    "message" => [
+                        "Post not found"
+                    ]
+                ]
+            ]);
+
+        $post = Post::where("title", "post 2")->first();
+        self::assertNotNull($post);
+
+        $this->delete("/api/posts/" . $post->id, [], ["Authorization" => "Bearer $token"])
+            ->assertStatus(404)
+            ->assertJson([
+                "errors" => [
+                    "message" => [
+                        "Post not found"
                     ]
                 ]
             ]);
