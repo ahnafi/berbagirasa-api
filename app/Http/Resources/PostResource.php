@@ -23,7 +23,8 @@ class PostResource extends JsonResource
             'updated_at' => $this->updated_at,
             'deleted_at' => $this->whenNotNull($this->deleted_at),
             "category" => new CategoryResource($this->category),
-            "images" => $this->images->map(fn($image) => asset("storage/" . $image->path))
+            "images" => $this->images->map(fn($image) => asset("storage/" . $image->path)),
+            "author" => $this->whenNotNull(new UserResource($this->user))
         ];
     }
 
