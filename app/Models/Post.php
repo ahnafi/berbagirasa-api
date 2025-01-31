@@ -16,7 +16,12 @@ class Post extends Model
         'title',
         'description',
         'location',
-        'user_id'
+        'user_id',
+        'category_id'
+    ];
+
+    protected $hidden = [
+        'category_id'
     ];
 
     public function user(): BelongsTo
@@ -27,5 +32,10 @@ class Post extends Model
     public function images(): HasMany
     {
         return $this->hasMany(PostImage::class);
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 }

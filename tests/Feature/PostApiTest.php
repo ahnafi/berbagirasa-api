@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\Post;
 use App\Models\PostImage;
 use App\Models\User;
+use Database\Seeders\CategorySeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -19,8 +21,9 @@ class PostApiTest extends TestCase
         Storage::fake("public");
         PostImage::query()->forceDelete();
         Post::query()->forceDelete();
+        Category::query()->delete();
         User::query()->delete();
-        $this->seed(UserSeeder::class);
+        $this->seed([CategorySeeder::class, UserSeeder::class]);
     }
 
     function test_create_post_success()
@@ -36,6 +39,7 @@ class PostApiTest extends TestCase
             "title" => "test",
             "description" => "test description",
             "location" => "test location",
+            "category_id" => "FOOD",
             "images" => [
                 $img, $img2, $img3
             ]
@@ -49,6 +53,38 @@ class PostApiTest extends TestCase
                     "title" => "test",
                     "description" => "test description",
                     "location" => "test location",
+                ]
+            ]);
+
+    }
+
+    function test_create_post_failed_category_not_exist()
+    {
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
+        Storage::fake("public");
+        $img = UploadedFile::fake()->image("foto kapan ya.jpg")->size("1000");
+        $img2 = UploadedFile::fake()->image("foto kapan ya.jpg")->size("1000");
+        $img3 = UploadedFile::fake()->image("foto kapan ya.jpg")->size("1000");
+
+        $this->post("/api/posts", [
+            "title" => "test",
+            "description" => "test description",
+            "location" => "test location",
+            "category_id" => "asolole",
+            "images" => [
+                $img, $img2, $img3
+            ]
+        ],
+            [
+                "Authorization" => "Bearer $token"
+            ])
+            ->assertStatus(400)
+            ->assertJson([
+                "errors" => [
+                    "category_id" => [
+                        "The selected category id is invalid."
+                    ]
                 ]
             ]);
 

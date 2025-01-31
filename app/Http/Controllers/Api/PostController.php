@@ -56,7 +56,7 @@ class PostController extends Controller implements HasMiddleware
             }
         }
 
-        return (new PostResource($content->load("images")))->response()->setStatusCode(201);
+        return (new PostResource($content->load(["images", "category"])))->response()->setStatusCode(201);
     }
 
     /**

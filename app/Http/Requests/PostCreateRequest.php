@@ -28,6 +28,7 @@ class PostCreateRequest extends FormRequest
             'title' => 'required|string|min:3|max:255',
             'description' => 'required|string',
             'location' => 'required|string|max:255',
+            'category_id' => 'required|string|exists:categories,id',
             "images" => "nullable|array",
             "images.*" => File::image()->max('2mb')
         ];
