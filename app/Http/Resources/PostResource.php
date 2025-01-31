@@ -7,25 +7,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class PostResource extends JsonResource
 {
-    // Define property
-    public $status;
-    public $message;
-    public $resource;
-
-    /**
-     * __construct
-     *
-     * @param  mixed $status
-     * @param  mixed $message
-     * @param  mixed $resource
-     * @return void
-     */
-    public function __construct($status, $message, $resource) {
-        parent::__construct($resource);
-        $this->status = $status;
-        $this->message = $message;
-    }
-
     /**
      * Transform the resource into an array.
      *
@@ -34,9 +15,16 @@ class PostResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'status' => $this->status,
-            'message' => $this->message,
-            'data' => $this->resource,
+            "id" => $this->id,
+            "title" => $this->title,
+            "description" => $this->description,
+            "location" => $this->location,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'deleted_at' => $this->whenNotNull($this->deleted_at),
+            "category" => new CategoryResource($this->category),
+            "images" => $this->images->map(fn($image) => asset("storage/" . $image->path))
         ];
     }
+
 }

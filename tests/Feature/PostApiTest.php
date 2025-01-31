@@ -4,110 +4,163 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Post;
+use App\Models\PostImage;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
+use Database\Seeders\CategorySeeder;
+use Database\Seeders\UserSeeder;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PostApiTest extends TestCase
 {
-    use RefreshDatabase;
 
-    /**
-     * test_can_create_post
-     *
-     * @return void
-     */
-    public function test_can_create_post()
+    function setUp(): void
     {
-        $response = $this->postJson('/api/posts', [
-            'title' => 'Post Title',
-            'description' => 'Post Description',
-            'location' => 'Post Location',
-            'category_id' => Category::factory()->create()->id,
-        ]);
+        parent::setUp();
+        Storage::fake("public");
+        PostImage::query()->forceDelete();
+        Post::query()->forceDelete();
+        Category::query()->delete();
+        User::query()->delete();
+        $this->seed([CategorySeeder::class, UserSeeder::class]);
+    }
 
-        $response->assertStatus(200)
+    function test_create_post_success()
+    {
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
+        Storage::fake("public");
+        $img = UploadedFile::fake()->image("foto kapan ya.jpg")->size("1000");
+        $img2 = UploadedFile::fake()->image("foto kapan ya.jpg")->size("1000");
+        $img3 = UploadedFile::fake()->image("foto kapan ya.jpg")->size("1000");
+
+        $this->post("/api/posts", [
+            "title" => "test",
+            "description" => "test description",
+            "location" => "test location",
+            "category_id" => "FOOD",
+            "images" => [
+                $img, $img2, $img3
+            ]
+        ],
+            [
+                "Authorization" => "Bearer $token"
+            ])
+            ->assertStatus(201)
             ->assertJson([
-                'status' => 'success',
-                'message' => 'Post created successfully',
+                "data" => [
+                    "title" => "test",
+                    "description" => "test description",
+                    "location" => "test location",
+                ]
+            ]);
+
+    }
+
+    function test_create_post_failed_category_not_exist()
+    {
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
+        Storage::fake("public");
+        $img = UploadedFile::fake()->image("foto kapan ya.jpg")->size("1000");
+        $img2 = UploadedFile::fake()->image("foto kapan ya.jpg")->size("1000");
+        $img3 = UploadedFile::fake()->image("foto kapan ya.jpg")->size("1000");
+
+        $this->post("/api/posts", [
+            "title" => "test",
+            "description" => "test description",
+            "location" => "test location",
+            "category_id" => "asolole",
+            "images" => [
+                $img, $img2, $img3
+            ]
+        ],
+            [
+                "Authorization" => "Bearer $token"
+            ])
+            ->assertStatus(400)
+            ->assertJson([
+                "errors" => [
+                    "category_id" => [
+                        "The selected category id is invalid."
+                    ]
+                ]
+            ]);
+
+    }
+
+    function test_create_post_unauthorized()
+    {
+        $this->post("/api/posts", [
+            "title" => "test",
+            "description" => "test description",
+            "location" => "test location",
+        ], [])
+            ->assertStatus(401)
+            ->assertJson([
+                "errors" => [
+                    "message" => [
+                        "Unauthorized"
+                    ]
+                ]
             ]);
     }
 
-    /**
-     * test_can_list_posts
-     *
-     * @return void
-     */
-    public function test_can_list_posts()
+    function test_create_post_image_not_valid()
     {
-        $posts = Post::factory()->count(5)->create();
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
+        Storage::fake("public");
+        $img = UploadedFile::fake()->image("foto kapan ya.jpg")->size("3000");
+        $img2 = UploadedFile::fake()->image("foto kapan ya");
 
-        $this->getJson('/api/posts')
-            ->assertStatus(200)
+        $this->post("/api/posts", [
+            "title" => "test",
+            "description" => "test description",
+            "location" => "test location",
+            "images" => [
+                $img, $img2
+            ]
+        ], [
+            "Authorization" => "Bearer $token"
+        ])
+            ->assertStatus(400)
             ->assertJson([
-                'status' => 'success',
-                'message' => 'Data fetched successfully',
-                'data' => $posts->toArray(),
+                "errors" => [
+                    "images.0" => [
+                        "The images.0 field must not be greater than 2000 kilobytes."
+                    ],
+                    "images.1" => [
+                        "The images.1 field must be an image."
+                    ]
+                ]
             ]);
     }
 
-    /**
-     * test_can_show_post
-     *
-     * @return void
-     */
-    public function test_can_show_post()
+    function test_create_post_field_required()
     {
-        $post = Post::factory()->create();
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
 
-        $this->getJson("/api/posts/{$post->id}")
-            ->assertStatus(200)
+        $this->post("/api/posts", [
+
+        ], [
+            "Authorization" => "Bearer $token"
+        ])
+            ->assertStatus(400)
             ->assertJson([
-                'status' => 'success',
-                'message' => 'Post fetched successfully',
-                'data' => $post->toArray(),
-            ]);
-    }
-
-    /**
-     * test_can_update_post
-     *
-     * @return void
-     */
-    public function test_can_update_post()
-    {
-        $post = Post::factory()->create();
-
-        $data = [
-            'title' => 'Post Title Updated',
-            'description' => 'Post Description Updated',
-            'location' => 'Post Location Updated',
-            'category_id' => 2,
-        ];
-
-        $this->putJson("/api/posts/{$post->id}", $data)
-            ->assertStatus(200)
-            ->assertJson([
-                'status' => 'success',
-                'message' => 'Post updated successfully',
-            ]);
-    }
-
-    /**
-     * test_can_delete_post
-     *
-     * @return void
-     */
-    public function test_can_delete_post()
-    {
-        $post = Post::factory()->create();
-
-        $this->deleteJson("/api/posts/{$post->id}")
-            ->assertStatus(200)
-            ->assertJson([
-                'status' => 'success',
-                'message' => 'Post deleted successfully',
+                "errors" => [
+                    "title" => [
+                        "The title field is required."
+                    ],
+                    "description" => [
+                        "The description field is required."
+                    ],
+                    "location" => [
+                        "The location field is required."
+                    ]
+                ]
             ]);
     }
 }
