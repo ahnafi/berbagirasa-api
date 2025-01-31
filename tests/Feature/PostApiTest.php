@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Models\PostImage;
 use App\Models\User;
 use Database\Seeders\CategorySeeder;
+use Database\Seeders\PostSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -159,6 +160,51 @@ class PostApiTest extends TestCase
                     ],
                     "location" => [
                         "The location field is required."
+                    ]
+                ]
+            ]);
+    }
+
+    function test_get_post_by_id_success()
+    {
+        $this->seed(PostSeeder::class);
+        $post = Post::where("title", "test")->first();
+
+        $this->get("/api/posts/$post->id")
+            ->assertStatus(200)
+            ->assertJson([
+                "data" => [
+                    "title" => "test",
+                    "description" => "test description",
+                    "location" => "test location",
+                    "category" => [
+                        "id" => "FOOD",
+                        "name" => "Makanan kering"
+                    ],
+                    "images" => [],
+                    "author" => [
+                        "name" => "test",
+                        "email" => "test@example.com",
+                        "phone" => "081234567",
+                        "address" => null,
+                        "bio" => null,
+                        "photo" => null,
+                    ]
+                ]
+            ]);
+    }
+
+    function test_get_post_by_id_not_found()
+    {
+        $this->seed(PostSeeder::class);
+        $post = Post::where("title", "test")->first();
+
+        $this->get("/api/posts/" . $post->id + 1)
+            ->assertStatus(404)
+            ->assertJson([
+                "errors" => [
+                    "message" => [
+                        "Post not found",
                     ]
                 ]
             ]);

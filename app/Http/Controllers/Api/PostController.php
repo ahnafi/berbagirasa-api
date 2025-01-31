@@ -7,6 +7,7 @@ use App\Http\Requests\PostCreateRequest;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
 use App\Models\PostImage;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -29,11 +30,13 @@ class PostController extends Controller implements HasMiddleware
      *
      * @return PostResource
      */
-    public function index(): PostResource
+    public function index(): JsonResponse
     {
-        $posts = Post::with('images')->get();
+        $posts = Post::with(['images', "user", "category"])->latest()->paginate(10);
 
-        return new PostResource('success', 'Data fetched successfully', $posts);
+        return response()->json([
+            "data" => PostResource::collection($posts)
+        ]);
     }
 
     /**
@@ -65,15 +68,19 @@ class PostController extends Controller implements HasMiddleware
      * @param mixed $id
      * @return PostResource
      */
-    public function show($id): PostResource
+    public function show(int $id): PostResource
     {
-        $post = Post::with('images')->find($id);
+        $post = Post::with(["user", "images", "category"])->find($id);
 
-        if (!$post) {
-            return new PostResource('error', 'Post not found', null);
-        }
+        if (!$post) throw new HttpResponseException(response([
+            "errors" => [
+                "message" => [
+                    "Post not found"
+                ]
+            ]
+        ], 404));
 
-        return new PostResource('success', 'Post fetched successfully', $post);
+        return new PostResource($post);
     }
 
     /**
