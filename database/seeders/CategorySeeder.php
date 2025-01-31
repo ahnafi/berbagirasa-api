@@ -17,5 +17,10 @@ class CategorySeeder extends Seeder
         $category->id = "FOOD";
         $category->name = "Makanan kering";
         $category->save();
+
+        $category2 = new Category();
+        $category2->id = "DRINK";
+        $category2->name = "Minuman aja";
+        $category2->save();
     }
 }

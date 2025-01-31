@@ -199,12 +199,115 @@ class PostApiTest extends TestCase
         $this->seed(PostSeeder::class);
         $post = Post::where("title", "test")->first();
 
-        $this->get("/api/posts/" . $post->id + 1)
+        $this->get("/api/posts/" . $post->id + 100)
             ->assertStatus(404)
             ->assertJson([
                 "errors" => [
                     "message" => [
                         "Post not found",
+                    ]
+                ]
+            ]);
+    }
+
+    function test_update_post_success()
+    {
+        $this->seed(PostSeeder::class);
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        $post = Post::where("title", "test")->first();
+
+        $this->patch("/api/posts/" . $post->id, [
+            "title" => "ini update",
+            "description" => "desc update",
+            "location" => "location update",
+            "category_id" => "DRINK"
+        ], ["Authorization" => "Bearer $token"])
+            ->assertStatus(200)
+            ->assertJson([
+                "data" => [
+                    "title" => "ini update",
+                    "description" => "desc update",
+                    "location" => "location update",
+                    "category" => [
+                        "id" => "DRINK"
+                    ],
+                    "images" => [],
+                    "author" => [
+                        "id" => $user->id,
+                    ]
+                ]
+            ]);
+    }
+
+    function test_update_post_failed_post_not_found()
+    {
+        $this->seed(PostSeeder::class);
+        $user = User::where("email", "test@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        $post = Post::where("title", "test")->first();
+
+        $this->patch("/api/posts/" . $post->id + 1, [
+            "title" => "ini update",
+            "description" => "desc update",
+            "location" => "location update",
+            "category_id" => "DRINK"
+        ], ["Authorization" => "Bearer $token"])
+            ->assertStatus(404)
+            ->assertJson([
+                "errors" => [
+                    "message" => [
+                        "Post not found"
+                    ]
+                ]
+            ]);
+    }
+
+    function test_update_post_failed_user_must_cannot_edit()
+    {
+        $this->seed(PostSeeder::class);
+        $user = User::where("email", "test2@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        $post = Post::where("title", "test")->first();
+
+        $this->patch("/api/posts/" . $post->id, [
+            "title" => "ini update",
+            "description" => "desc update",
+            "location" => "location update",
+            "category_id" => "DRINK"
+        ], ["Authorization" => "Bearer $token"])
+            ->assertStatus(404)
+            ->assertJson([
+                "errors" => [
+                    "message" => [
+                        "Post not found"
+                    ]
+                ]
+            ]);
+    }
+
+    function test_update_post_failed_unauthorized()
+    {
+        $this->seed(PostSeeder::class);
+        $user = User::where("email", "test2@example.com")->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        $post = Post::where("title", "test")->first();
+
+        $this->patch("/api/posts/" . $post->id, [
+            "title" => "ini update",
+            "description" => "desc update",
+            "location" => "location update",
+            "category_id" => "DRINK"
+        ], [])
+            ->assertStatus(401)
+            ->assertJson([
+                "errors" => [
+                    "message" => [
+                        "Unauthorized"
                     ]
                 ]
             ]);

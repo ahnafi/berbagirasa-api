@@ -19,5 +19,12 @@ class UserSeeder extends Seeder
         $user->password = "@Password1";
         $user->phone = "081234567";
         $user->save();
+
+        $user2 = new User();
+        $user2->name = "test user 2";
+        $user2->email = "test2@example.com";
+        $user2->password = "@Password1";
+        $user2->phone = "0855544332";
+        $user2->save();
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PostCreateRequest;
+use App\Http\Requests\PostUpdateRequest;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
 use App\Models\PostImage;
@@ -28,7 +29,7 @@ class PostController extends Controller implements HasMiddleware
     /**
      * index
      *
-     * @return PostResource
+     * @return JsonResponse
      */
     public function index(): JsonResponse
     {
@@ -42,7 +43,7 @@ class PostController extends Controller implements HasMiddleware
     /**
      * store
      *
-     * @param mixed $request
+     * @param PostCreateRequest $request
      * @return JsonResponse
      */
     public function store(PostCreateRequest $request): JsonResponse
@@ -65,7 +66,7 @@ class PostController extends Controller implements HasMiddleware
     /**
      * show
      *
-     * @param mixed $id
+     * @param int $id
      * @return PostResource
      */
     public function show(int $id): PostResource
@@ -86,37 +87,27 @@ class PostController extends Controller implements HasMiddleware
     /**
      * update
      *
-     * @param mixed $request
-     * @param mixed $id
+     * @param PostUpdateRequest $request
+     * @param int $id
      * @return PostResource
      */
-    public function update(Request $request, $id): PostResource
+    public function update(PostUpdateRequest $request, int $id): PostResource
     {
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|min:3|max:255',
-            'description' => 'required|string',
-            'location' => 'required|string|max:255',
-            'category_id' => 'required|integer|exists:categories,id',
-        ]);
+        $data = $request->validated();
+        $user = Auth::user();
+        $post = $user->posts()->find($id);
 
-        if ($validator->fails()) {
-            return new PostResource('error', $validator->errors(), null);
-        }
+        if (!$post) throw new HttpResponseException(response([
+            "errors" => [
+                "message" => [
+                    "Post not found"
+                ]
+            ]
+        ], 404));
 
-        $post = Post::find($id);
+        $post->update($data);
 
-        if (!$post) {
-            return new PostResource('error', 'Post not found', null);
-        }
-
-        $post->update([
-            'title' => $request->title,
-            'description' => $request->description,
-            'location' => $request->location,
-            'category_id' => $request->category_id,
-        ]);
-
-        return new PostResource('success', 'Post updated successfully', $post);
+        return new PostResource($post->load(["images", "category"]));
     }
 
     /**
