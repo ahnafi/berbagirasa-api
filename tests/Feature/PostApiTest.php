@@ -384,7 +384,7 @@ class PostApiTest extends TestCase
             ]);
     }
 
-    function test_search_post_success()
+    function test_search_post_success_structure()
     {
         $this->seed(PostSeeder::class);
 
@@ -413,4 +413,108 @@ class PostApiTest extends TestCase
                 ],
             ]);
     }
+
+    function test_search_post_success_userId()
+    {
+        $this->seed(PostSeeder::class);
+
+        $user = User::query()->where("email", "test@example.com")->first();
+
+        $this->get("/api/posts?userId=$user->id")
+            ->assertStatus(200)
+            ->assertJson([
+                "data" => [
+                    [
+                        "title" => "test",
+                        "category" => [
+                            "id" => "FOOD"
+                        ],
+                        "author" => [
+                            "id" => $user->id
+                        ]
+                    ]
+                ]
+            ]);
+    }
+
+    function test_search_post_not_found()
+    {
+        $this->seed(PostSeeder::class);
+
+        $this->get("/api/posts?title=wongireng")
+            ->assertStatus(200)
+            ->assertJson([
+                "data" => []
+            ]);
+    }
+
+    function test_search_post_success_by_category()
+    {
+        $this->seed(PostSeeder::class);
+
+        $this->get("/api/posts?category=FOOD")
+            ->assertStatus(200)
+            ->assertJson([
+                "data" => [
+                    [
+                        "category" => [
+                            "id" => "FOOD"
+                        ]
+                    ]
+                ]
+            ]);
+    }
+
+    function test_search_post_success_by_location()
+    {
+        $this->seed(PostSeeder::class);
+
+        $this->get("/api/posts?location=test")
+            ->assertStatus(200)
+            ->assertJson([
+                "data" => [
+                    [
+                        "location" => "test location"
+                    ],
+                    [
+                        "location" => "test location 2"
+                    ]
+                ]
+            ]);
+    }
+
+    function test_search_post_success_paging_and_size()
+    {
+        $this->seed(PostSeeder::class);
+
+        $this->get("/api/posts?location=test&size=1&page=2")
+            ->assertStatus(200)
+            ->assertJson([
+                "data" => [
+                    [
+                        "location" => "test location 2"
+                    ]
+                ]
+            ]);
+    }
+
+    function test_search_post_success_no_query()
+    {
+        $this->seed(PostSeeder::class);
+
+        $this->get("/api/posts")
+            ->assertStatus(200)
+            ->assertJson([
+                "data" => [
+                    [
+                        "location" => "test location"
+                    ],
+                    [
+                        "location" => "test location 2"
+                    ]
+                ]
+            ]);
+    }
+
+
 }
