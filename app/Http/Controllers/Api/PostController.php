@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PostCreateRequest;
 use App\Http\Requests\PostUpdateRequest;
+use App\Http\Resources\PostCollection;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
 use App\Models\PostImage;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,15 +31,31 @@ class PostController extends Controller implements HasMiddleware
     /**
      * index
      *
+     * @param Request $request
      * @return JsonResponse
      */
-    public function index(): JsonResponse
+    public function index(Request $request): PostCollection
     {
-        $posts = Post::with(['images', "user", "category"])->latest()->paginate(10);
+        $page = $request->input('page', 1);
+        $size = $request->input('size', 10);
 
-        return response()->json([
-            "data" => PostResource::collection($posts)
-        ]);
+        $posts = Post::query()
+            ->when($request->has('title'), function ($query) use ($request) {
+                $query->where("title", "like", "%" . $request->input('title') . "%");
+            })
+            ->when($request->has('userId'), function ($query) use ($request) {
+                $query->where('user_id', $request->integer('userId'));
+            })
+            ->when($request->has('category'), function ($query) use ($request) {
+                $query->where("category_id", $request->input('category'));
+            })
+            ->when($request->has('location'), function ($query) use ($request) {
+                $query->where("location", "like", "%" . $request->input('location') . "%");
+            })
+            ->with(['images', 'user', 'category'])
+            ->paginate(perPage: $size, page: $page);
+
+        return new PostCollection($posts);
     }
 
     /**

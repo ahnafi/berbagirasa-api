@@ -383,4 +383,34 @@ class PostApiTest extends TestCase
                 ]
             ]);
     }
+
+    function test_search_post_success()
+    {
+        $this->seed(PostSeeder::class);
+
+        $this->get("/api/posts?title=tes")
+            ->assertStatus(200)
+            ->assertJsonStructure([
+                "data" => [
+                    [
+                        "title",
+                        "author" => [
+                            "name"
+                        ],
+                        "category" => [
+                            "name"
+                        ],
+                        "images" => []
+                    ]
+                ],
+                "links" => [],
+                "meta" => [
+                    "links" => [],
+                    "path",
+                    "per_page",
+                    "to",
+                    "total"
+                ],
+            ]);
+    }
 }
