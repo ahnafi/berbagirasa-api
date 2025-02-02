@@ -8,6 +8,7 @@ use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -26,16 +27,14 @@ class UserController extends Controller
 
         if ($request->hasFile("photo")) {
             $data["photo"] = $request->file("photo")->store("profiles", "public");
+
+            if (!empty($user->photo)) {
+                Storage::disk('public')->delete($user->photo);
+            }
         }
 
-        if (!empty($data["password"])) {
-            $data["password"] = Hash::make($data["password"]);
-        } else {
-            unset($data["password"]);
-        }
-
+        if (!$request->filled("password")) unset($data["password"]);
         $user->update($data);
-
         return new UserResource($user);
     }
 
