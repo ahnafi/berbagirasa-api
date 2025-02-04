@@ -13,6 +13,6 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::apiResource('/posts', App\Http\Controllers\Api\PostController::class);
-Route::get("/category",\App\Http\Controllers\CategoryController::class);
+Route::get("/category", [\App\Http\Controllers\CategoryController::class, "all"]);
 //Route::apiResource('/post-images', App\Http\Controllers\Api\PostImageController::class);
 //Route::apiResource('/feedback', App\Http\Controllers\Api\FeedbackController::class);
